@@ -9,6 +9,7 @@ import {
   Platform,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
+import axios from "axios";
 
 const App = () => {
   const [selectedImage, setSelectedImage] = useState(null);
@@ -42,6 +43,34 @@ const App = () => {
     const selectedUri = pickerResult.assets[0]?.uri;
     setSelectedImage(selectedUri);
     console.log("Selected image URI:", selectedUri);
+
+    // Upload the image to the server
+    uploadImage(selectedUri);
+  };
+
+  const uploadImage = async (uri) => {
+    try {
+      const formData = new FormData();
+      formData.append("image", {
+        uri,
+        name: "image.jpg",
+        type: "image/jpg",
+      });
+
+      const response = await axios.post(
+        "http://192.168.1.59:5000/upload_image",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      console.log("Upload response:", response.data);
+    } catch (error) {
+      console.error("Upload error:", error);
+    }
   };
 
   return (
