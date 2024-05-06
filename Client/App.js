@@ -1,124 +1,86 @@
-import React, { useState } from "react";
-import { StyleSheet, Text, View, Button, Image } from "react-native";
+import React, { useState, useEffect } from "react";
+import {
+  StyleSheet,
+  Text,
+  View,
+  Image,
+  SafeAreaView,
+  TouchableOpacity,
+  Platform,
+} from "react-native";
 import * as ImagePicker from "expo-image-picker";
 
-const API_BASE_URL = "http://192.168.1.59:5000"; // Replace with your server's IP address and port
+const App = () => {
+  const [selectedImage, setSelectedImage] = useState(null);
 
-export default function App() {
-  const [image, setImage] = useState(null);
-  const [uploadResponse, setUploadResponse] = useState("");
-  const [data, setData] = useState(null);
-
-  const pickImage = async () => {
-    try {
-      let result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 1,
-      });
-
-      console.log("ImagePicker result:", result);
-
-      if (!result.cancelled) {
-        if (result.uri) {
-          setImage(result.uri);
-          uploadImage(result.uri);
-        } else {
-          console.error("Error uploading image: URI is undefined");
+  useEffect(() => {
+    (async () => {
+      if (Platform.OS !== "web") {
+        const { status } =
+          await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== "granted") {
+          alert("Permission to access camera roll is required!");
         }
-      } else {
-        console.log("Image selection cancelled");
       }
-    } catch (error) {
-      console.error("Error picking image:", error);
-    }
-  };
+    })();
+  }, []);
 
-  const uploadImage = async (uri) => {
-    if (!uri) {
-      console.error("Error uploading image: URI is undefined");
+  const openImagePickerAsync = async () => {
+    const permissionResult =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (permissionResult.granted === false) {
+      alert("Permission to access camera roll is required!");
       return;
     }
 
-    let formData = new FormData();
-    let uriParts = uri.split(".");
-    let fileType = uriParts[uriParts.length - 1];
-
-    formData.append("image", {
-      uri,
-      name: `photo.${fileType}`,
-      type: `image/${fileType}`,
-    });
-
-    try {
-      let response = await fetch(`${API_BASE_URL}/upload_image`, {
-        method: "POST",
-        body: formData,
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-      let json = await response.json();
-      setUploadResponse(json.message);
-    } catch (error) {
-      console.error("Error uploading image: ", error);
+    const pickerResult = await ImagePicker.launchImageLibraryAsync();
+    if (pickerResult.cancelled === true) {
+      return;
     }
-  };
 
-  const getImage = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/get_image`);
-      const blob = await response.blob();
-
-      // Convert blob to base64
-      const reader = new FileReader();
-      reader.onload = () => {
-        const base64data = reader.result;
-        setImage(base64data); // Use setImage instead of setImageData
-      };
-      reader.readAsDataURL(blob);
-    } catch (error) {
-      console.error("Error fetching image:", error);
-    }
-  };
-
-  const getData = async () => {
-    try {
-      let response = await fetch(`${API_BASE_URL}/get_data`);
-      let json = await response.json();
-      setData(json);
-    } catch (error) {
-      console.error("Error getting data: ", error);
-    }
+    // Accessing the URI from the assets array
+    const selectedUri = pickerResult.assets[0]?.uri;
+    setSelectedImage(selectedUri);
+    console.log("Selected image URI:", selectedUri);
   };
 
   return (
-    <View style={styles.container}>
-      <Button title="Pick an image from camera roll" onPress={pickImage} />
-      {image && (
-        <Image source={{ uri: image }} style={{ width: 200, height: 200 }} />
-      )}
-      <Text>{uploadResponse}</Text>
-      <Button title="Get Image" onPress={getImage} />
-      <Button title="Get Data" onPress={getData} />
-
-      {data && (
-        <View>
-          <Text>Name: {data.name}</Text>
-          <Text>Age: {data.age}</Text>
-          <Text>City: {data.city}</Text>
-        </View>
-      )}
-    </View>
+    <SafeAreaView style={{ flex: 1 }}>
+      <View style={styles.container}>
+        {selectedImage ? (
+          <Image source={{ uri: selectedImage }} style={styles.image} />
+        ) : (
+          <Text>No image selected</Text>
+        )}
+        <TouchableOpacity onPress={openImagePickerAsync} style={styles.button}>
+          <Text style={styles.buttonText}>Select Image</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
-    alignItems: "center",
     justifyContent: "center",
+    alignItems: "center",
+  },
+  image: {
+    width: 200,
+    height: 200,
+    resizeMode: "cover",
+    marginBottom: 20,
+  },
+  button: {
+    backgroundColor: "skyblue",
+    padding: 10,
+    borderRadius: 5,
+  },
+  buttonText: {
+    color: "white",
+    fontSize: 20,
   },
 });
+
+export default App;
