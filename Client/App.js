@@ -1,45 +1,81 @@
 import React, { useState } from "react";
-import { View, Text, Button, Image, StyleSheet } from "react-native";
-import axios from "axios";
+import { StyleSheet, Text, View, Button, Image } from "react-native";
+import * as ImagePicker from "expo-image-picker";
 
-const API_BASE_URL = "http://192.168.1.59:5000"; // Change this to your server's IP address and port
+const API_BASE_URL = "http://192.168.1.59:5000"; // Replace with your server's IP address and port
 
-const App = () => {
-  const [imageURI, setImageURI] = useState(null);
+export default function App() {
+  const [image, setImage] = useState(null);
+  const [uploadResponse, setUploadResponse] = useState("");
   const [data, setData] = useState(null);
 
-  const handleUploadImage = async () => {
+  const pickImage = async () => {
     try {
-      const uri = "image.png"; // Update with actual image URI
-      const type = uri.endsWith(".png") ? "image/png" : "image/jpeg"; // Determine image type dynamically
-      const name = "image." + (type === "image/png" ? "png" : "jpeg"); // Set image name dynamically
-      
-      const data = new FormData();
-      data.append('file', {
-        uri,
-        type,
-        name,
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 1,
       });
 
-      const response = await axios.post(`${API_BASE_URL}/upload_image`, data);
-      console.log(response.data);
-      // Fetch image after upload
-      fetchImage();
+      console.log("ImagePicker result:", result);
+
+      if (!result.cancelled) {
+        if (result.uri) {
+          setImage(result.uri);
+          uploadImage(result.uri);
+        } else {
+          console.error("Error uploading image: URI is undefined");
+        }
+      } else {
+        console.log("Image selection cancelled");
+      }
     } catch (error) {
-      console.error(error);
+      console.error("Error picking image:", error);
     }
   };
 
-  const fetchImage = async () => {
+  const uploadImage = async (uri) => {
+    if (!uri) {
+      console.error("Error uploading image: URI is undefined");
+      return;
+    }
+
+    let formData = new FormData();
+    let uriParts = uri.split(".");
+    let fileType = uriParts[uriParts.length - 1];
+
+    formData.append("image", {
+      uri,
+      name: `photo.${fileType}`,
+      type: `image/${fileType}`,
+    });
+
     try {
-      const response = await fetch(API_BASE_URL + "/get_image");
+      let response = await fetch(`${API_BASE_URL}/upload_image`, {
+        method: "POST",
+        body: formData,
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      let json = await response.json();
+      setUploadResponse(json.message);
+    } catch (error) {
+      console.error("Error uploading image: ", error);
+    }
+  };
+
+  const getImage = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/get_image`);
       const blob = await response.blob();
 
       // Convert blob to base64
       const reader = new FileReader();
       reader.onload = () => {
         const base64data = reader.result;
-        setImageURI(base64data);
+        setImage(base64data); // Use setImage instead of setImageData
       };
       reader.readAsDataURL(blob);
     } catch (error) {
@@ -47,23 +83,28 @@ const App = () => {
     }
   };
 
-  const fetchData = async () => {
+  const getData = async () => {
     try {
-      const dataResponse = await axios.get(`${API_BASE_URL}/get_data`);
-      setData(dataResponse.data);
+      let response = await fetch(`${API_BASE_URL}/get_data`);
+      let json = await response.json();
+      setData(json);
     } catch (error) {
-      console.error(error);
+      console.error("Error getting data: ", error);
     }
   };
 
   return (
     <View style={styles.container}>
-      <Button title="Upload Image" onPress={handleUploadImage} />
-      <Button title="Fetch Image" onPress={fetchImage} />
-      <Button title="Fetch Data" onPress={fetchData} />
-      {imageURI && <Image source={{ uri: imageURI }} style={styles.image} />}
+      <Button title="Pick an image from camera roll" onPress={pickImage} />
+      {image && (
+        <Image source={{ uri: image }} style={{ width: 200, height: 200 }} />
+      )}
+      <Text>{uploadResponse}</Text>
+      <Button title="Get Image" onPress={getImage} />
+      <Button title="Get Data" onPress={getData} />
+
       {data && (
-        <View style={styles.dataContainer}>
+        <View>
           <Text>Name: {data.name}</Text>
           <Text>Age: {data.age}</Text>
           <Text>City: {data.city}</Text>
@@ -71,22 +112,13 @@ const App = () => {
       )}
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
+    backgroundColor: "#fff",
     alignItems: "center",
-  },
-  image: {
-    width: 200,
-    height: 200,
-    marginVertical: 20,
-  },
-  dataContainer: {
-    marginTop: 20,
+    justifyContent: "center",
   },
 });
-
-export default App;
