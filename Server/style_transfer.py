@@ -28,9 +28,9 @@ def image_loader(image_name):
   image = Image.open(image_name)
   image = loader(image).unsqueeze(0)
   return image.to(device, torch.float)
-
-style_img = image_loader("data2/dancing.jpg")
-content_img = image_loader("data2/HERO.jpg")
+ 
+style_img = image_loader("Server/data2/picasso.jpg")
+content_img = image_loader("Server/data2/HERO.jpg")
 
 assert style_img.size() == content_img.size(), \
     "we need to import style and content images of the same size"
@@ -254,11 +254,21 @@ out_t = output.data.squeeze()
 output_img = transforms.ToPILImage()(out_t)
 
 # Define the path to the Generated_data folder
-data_folder = "Generated_data"
+data_folder = "Server/Generated_data"
+temp_folder = "Server/temp_data"
 
 # Create the Generated_data folder if it doesn't exist
 if not os.path.exists(data_folder):
     os.makedirs(data_folder)
+
+if not os.path.exists(temp_folder):
+    os.makedirs(temp_folder)
+
+# Save the output image with the same fixed filename in the temp folder
+temp_file_path = os.path.join(temp_folder, "output.png")
+output_img.save(temp_file_path)
+
+print(f"Image saved in temporary file: {temp_file_path}")
 
 # Generate a unique filename using timestamp
 timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
@@ -267,20 +277,4 @@ filename = f"output_{timestamp}.png"
 # Save the output image in the Generated_data folder
 output_img.save(os.path.join(data_folder, filename))
 
-print("Image Complete")
-output_img
-
-# out_t = output.data.squeeze()
-# output_img = transforms.ToPILImage()(out_t)
-
-# # Define the path to the Generated_data folder
-# data_folder = "Generated_data"
-
-# # Create the Generated_data folder if it doesn't exist
-# if not os.path.exists(data_folder):
-#     os.makedirs(data_folder)
-
-# # Save the output image in the Generated_data folder
-# output_img.save(os.path.join(data_folder, 'output.png'))
-
-# output_img
+print("Image saved in Generated_data folder")

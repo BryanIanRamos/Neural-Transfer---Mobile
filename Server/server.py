@@ -1,7 +1,12 @@
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify, send_file, send_from_directory
 import os
 import io
 from PIL import Image
+from style_transfer import style_transfer
+
+# from style_transfer import style_transfer
+# from Server.style_transfer import style_transfer
+
 
 app = Flask(__name__)
 
@@ -34,6 +39,24 @@ def get_image():
         return 'Image not found', 404
 
     return send_file(io.BytesIO(image_bytes), mimetype='image/png')
+
+@app.route('/get_result', methods=['GET'])
+def get_result():
+    folder_path = 'Server/data2'
+    file_directory = "Server/temp_data"
+    temp_filename = "output.png"
+    style_img_path = os.path.join(folder_path, 'dancing.jpg')
+    content_img_path = os.path.join(folder_path, 'HERO.jpg')
+
+    # Check if the style and content images exist
+    if os.path.exists(style_img_path) and os.path.exists(content_img_path):
+        # Perform style transfer
+        style_transfer(style_img_path, content_img_path, os.path.join(file_directory, temp_filename))
+
+        return send_from_directory(file_directory, temp_filename)
+    else:
+        return jsonify({'message': 'Files not found in folder.'}), 404
+    
 
 @app.route('/get_data', methods=['GET'])
 def get_data():
