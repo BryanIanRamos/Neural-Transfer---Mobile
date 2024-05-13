@@ -13,6 +13,7 @@ import axios from "axios";
 
 const App = () => {
   const [selectedImage, setSelectedImage] = useState(null);
+  const API = "http://192.168.1.55:5000";
 
   useEffect(() => {
     (async () => {
@@ -57,15 +58,11 @@ const App = () => {
         type: "image/jpg",
       });
 
-      const response = await axios.post(
-        "http://192.168.1.59:5000/upload_image",
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
+      const response = await axios.post(`${API}/upload_image`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
       console.log("Upload response:", response.data);
     } catch (error) {

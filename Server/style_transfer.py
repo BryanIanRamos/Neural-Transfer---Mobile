@@ -2,8 +2,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+import os
+import uuid
 
 from PIL import Image
+from datetime import datetime
+from torchvision import transforms
 import matplotlib.pyplot as plt
 
 import torchvision.transforms as transforms
@@ -25,8 +29,8 @@ def image_loader(image_name):
   image = loader(image).unsqueeze(0)
   return image.to(device, torch.float)
 
-style_img = image_loader("data/picasso.jpg")
-content_img = image_loader("data/HERO.jpg")
+style_img = image_loader("data2/dancing.jpg")
+content_img = image_loader("data2/HERO.jpg")
 
 assert style_img.size() == content_img.size(), \
     "we need to import style and content images of the same size"
@@ -44,11 +48,11 @@ def imshow(tensor, title=None):
         plt.title(title)
     plt.pause(0.001)
 
-plt.figure()
-imshow(style_img, title='Style Image')
+# plt.figure()
+# imshow(style_img, title='Style Image')
 
-plt.figure()
-imshow(content_img, title='Content Image')
+# plt.figure()
+# imshow(content_img, title='Content Image')
 
 class ContentLoss(nn.Module):
 
@@ -169,8 +173,8 @@ input_img = content_img.clone()
 #    input_img = torch.randn(content_img.data.size())
 
 # add the original input image to the figure:
-plt.figure()
-imshow(input_img, title='Input Image')
+# plt.figure()
+# imshow(input_img, title='Input Image')
 
 def get_input_optimizer(input_img):
     optimizer = optim.LBFGS([input_img])
@@ -240,14 +244,43 @@ def run_style_transfer(cnn, normalization_mean, normalization_std,
 output = run_style_transfer(cnn, cnn_normalization_mean, cnn_normalization_std,
                             content_img, style_img, input_img)
 
-plt.figure()
-imshow(output, title='Output Image')
+# plt.figure()
+# imshow(output, title='Output Image')
 
 plt.ioff()
 plt.show()
 
-
-out_t = (output.data.squeeze())
+out_t = output.data.squeeze()
 output_img = transforms.ToPILImage()(out_t)
-output_img.save('output.png')
+
+# Define the path to the Generated_data folder
+data_folder = "Generated_data"
+
+# Create the Generated_data folder if it doesn't exist
+if not os.path.exists(data_folder):
+    os.makedirs(data_folder)
+
+# Generate a unique filename using timestamp
+timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+filename = f"output_{timestamp}.png"
+
+# Save the output image in the Generated_data folder
+output_img.save(os.path.join(data_folder, filename))
+
+print("Image Complete")
 output_img
+
+# out_t = output.data.squeeze()
+# output_img = transforms.ToPILImage()(out_t)
+
+# # Define the path to the Generated_data folder
+# data_folder = "Generated_data"
+
+# # Create the Generated_data folder if it doesn't exist
+# if not os.path.exists(data_folder):
+#     os.makedirs(data_folder)
+
+# # Save the output image in the Generated_data folder
+# output_img.save(os.path.join(data_folder, 'output.png'))
+
+# output_img
