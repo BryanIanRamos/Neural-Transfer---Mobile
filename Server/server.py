@@ -2,7 +2,8 @@ from flask import Flask, request, jsonify, send_file, send_from_directory
 import os
 import io
 from PIL import Image
-from style_transfer import style_transfer
+
+import subprocess
 
 # from style_transfer import style_transfer
 # from Server.style_transfer import style_transfer
@@ -43,7 +44,7 @@ def get_image():
 @app.route('/get_result', methods=['GET'])
 def get_result():
     folder_path = 'Server/data2'
-    file_directory = "Server/temp_data"
+    file_directory = "temp_data"
     temp_filename = "output.png"
     style_img_path = os.path.join(folder_path, 'dancing.jpg')
     content_img_path = os.path.join(folder_path, 'HERO.jpg')
@@ -51,7 +52,10 @@ def get_result():
     # Check if the style and content images exist
     if os.path.exists(style_img_path) and os.path.exists(content_img_path):
         # Perform style transfer
-        style_transfer(style_img_path, content_img_path, os.path.join(file_directory, temp_filename))
+        subprocess.run(["python", "Server/style_transfer.py"])
+
+        print(file_directory)
+        print(temp_filename)
 
         return send_from_directory(file_directory, temp_filename)
     else:
