@@ -16,238 +16,64 @@ from torchvision.models import vgg19, VGG19_Weights
 
 import copy
 
+def perform_style_transfer(content_img_path, style_img_path, output_folder, imsize=128, num_steps=100, style_weight=1000000, content_weight=1):
 
-# Set the image size based on whether a CUDA-enabled GPU is available
-imsize = 512 
-# if torch.cuda.is_available() else 128
+    # Load images
+    content_img = image_loader(content_img_path, imsize)
+    style_img = image_loader(style_img_path, imsize)
+    
+    # Check if images have been loaded successfully
+    assert content_img.size() == style_img.size(), "Content and style images must have the same size"
+    
+    # Initialize VGG19 model
+    cnn = vgg19(weights=VGG19_Weights.DEFAULT).features.eval()
+    
+    # Define normalization parameters
+    cnn_normalization_mean = torch.tensor([0.485, 0.456, 0.406])
+    cnn_normalization_std = torch.tensor([0.229, 0.224, 0.225])
+    
+    # Define content and style layers
+    content_layers_default = ['conv_4']
+    style_layers_default = ['conv_1', 'conv_2', 'conv_3', 'conv_4', 'conv_5']
+    
+    # Perform style transfer
+    output_img = run_style_transfer(cnn, cnn_normalization_mean, cnn_normalization_std,
+                                    content_img, style_img, imsize, num_steps, style_weight, content_weight)
+    
+    # Save output image
+    save_image(output_img, output_folder)
 
-def image_loader(path):
+def image_loader(path, imsize):
     image = Image.open(path)
     loader = transforms.Compose([
-        transforms.Resize((imsize, imsize)), # Adjust the size as needed
-        transforms.ToTensor()
+        transforms.Resize((imsize, imsize)),  # Resize images to desired size
+        transforms.ToTensor()  # Convert images to tensors
     ])
-    image = loader(image).unsqueeze(0)
+    image = loader(image).unsqueeze(0)  # Add batch dimension
     return image
 
-def find_image(directory, base_name):
-    supported_formats = ['*.jpg', '*.jpeg', '*.png']
-    for format in supported_formats:
-        files = glob.glob(os.path.join(directory, base_name + format))
-        if files:
-            return files[0]
-    return None
-
-# Define the directories
-picasso_dir = "Server/data2/"
-hero_dir = "Server/data2/"
-
-# Find the images
-picasso_path = find_image(picasso_dir, "picasso")
-hero_path = find_image(hero_dir, "HERO")
-
-# Load the images
-if picasso_path:
-    style_img = image_loader(picasso_path)
-else:
-    raise FileNotFoundError("Picasso image not found.")
-
-if hero_path:
-    content_img = image_loader(hero_path)
-else:
-    raise FileNotFoundError("HERO image not found.")
-
-# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-# torch.set_default_device(device)
-
-# imsize = 512 if torch.cuda.is_available() else 128
-
-# loader = transforms.Compose([
-#     transforms.Resize(imsize),
-#     transforms.ToTensor()])
-
-# def image_loader(image_name):
-#   image = Image.open(image_name)
-#   image = loader(image).unsqueeze(0) 
-#   return image.to(device, torch.float)
- 
-# style_img = image_loader("Server/data2/picasso.jpg")
-# content_img = image_loader("Server/data2/HERO.png")
-
-assert style_img.size() == content_img.size(), \
-    "we need to import style and content images of the same size"
-
-unloader = transforms.ToPILImage()
-
-plt.ion()
-
-def imshow(tensor, title=None):
-    image = tensor.cpu().clone()
-    image = image.squeeze(0)
-    image = unloader(image)
-    plt.imshow(image)
-    if title is not None:
-        plt.title(title)
-    plt.pause(0.001)
-
-# plt.figure()
-# imshow(style_img, title='Style Image')
-
-# plt.figure()
-# imshow(content_img, title='Content Image')
-
-class ContentLoss(nn.Module):
-
-    def __init__(self, target):
-      super(ContentLoss, self).__init__()
-      self.target = target.detach()
-
-    def forward(self, input):
-       self.loss = F.mse_loss(input, self.target)
-       return input
-    
-
-def gram_matrix(input):
-    a, b, c, d = input.size()
-
-    features = input.view(a * b, c * d)
-
-    G = torch.mm(features, features.t())
-
-    return G.div(a * b * c * d)
-
-class StyleLoss(nn.Module):
-
-    def __init__(self, target_feature):
-        super(StyleLoss, self).__init__()
-        self.target = gram_matrix(target_feature).detach()
-
-    def forward(self, input):
-        G = gram_matrix(input)
-        self.loss = F.mse_loss(G, self.target)
-        return input
-
-cnn = vgg19(weights=VGG19_Weights.DEFAULT).features.eval()
-
-cnn_normalization_mean = torch.tensor([0.485, 0.456, 0.406])
-cnn_normalization_std = torch.tensor([0.229, 0.224, 0.225])
-
-class Normalization(nn.Module):
-    def __init__(self, mean, std):
-        super(Normalization, self).__init__()
-        
-        self.mean = torch.tensor(mean).view(-1, 1, 1)
-        self.std = torch.tensor(std).view(-1, 1, 1)
-
-    def forward(self, img):
-        return (img - self.mean) / self.std
-    
-#Sequential
-
-# desired depth layers to compute style/content losses :
-content_layers_default = ['conv_4']
-style_layers_default = ['conv_1', 'conv_2', 'conv_3', 'conv_4', 'conv_5']
-
-def get_style_model_and_losses(cnn, normalization_mean, normalization_std,
-                               style_img, content_img,
-                               content_layers=content_layers_default,
-                               style_layers=style_layers_default):
-    # normalization module
+def run_style_transfer(cnn, normalization_mean, normalization_std, content_img, style_img,
+                       imsize, num_steps, style_weight, content_weight):
+    # Define normalization module
     normalization = Normalization(normalization_mean, normalization_std)
 
-    # just in order to have an iterable access to or list of content/style
-    # losses
-    content_losses = []
-    style_losses = []
+    # Get style model and losses
+    model, style_losses, content_losses = get_style_model_and_losses(cnn, normalization,
+                                                                     style_img, content_img)
 
-    # assuming that ``cnn`` is a ``nn.Sequential``, so we make a new ``nn.Sequential``
-    # to put in modules that are supposed to be activated sequentially
-    model = nn.Sequential(normalization)
+    # Initialize input image
+    input_img = content_img.clone().requires_grad_(True)
 
-    i = 0  # increment every time we see a conv
-    for layer in cnn.children():
-        if isinstance(layer, nn.Conv2d):
-            i += 1
-            name = 'conv_{}'.format(i)
-        elif isinstance(layer, nn.ReLU):
-            name = 'relu_{}'.format(i)
-            # The in-place version doesn't play very nicely with the ``ContentLoss``
-            # and ``StyleLoss`` we insert below. So we replace with out-of-place
-            # ones here.
-            layer = nn.ReLU(inplace=False)
-        elif isinstance(layer, nn.MaxPool2d):
-            name = 'pool_{}'.format(i)
-        elif isinstance(layer, nn.BatchNorm2d):
-            name = 'bn_{}'.format(i)
-        else:
-            raise RuntimeError('Unrecognized layer: {}'.format(layer.__class__.__name__))
-
-        model.add_module(name, layer)
-
-        if name in content_layers:
-            # add content loss:
-            target = model(content_img).detach()
-            content_loss = ContentLoss(target)
-            model.add_module("content_loss_{}".format(i), content_loss)
-            content_losses.append(content_loss)
-
-        if name in style_layers:
-            # add style loss:
-            target_feature = model(style_img).detach()
-            style_loss = StyleLoss(target_feature)
-            model.add_module("style_loss_{}".format(i), style_loss)
-            style_losses.append(style_loss)
-
-    # now we trim off the layers after the last content and style losses
-    for i in range(len(model) - 1, -1, -1):
-        if isinstance(model[i], ContentLoss) or isinstance(model[i], StyleLoss):
-            break
-
-    model = model[:(i + 1)]
-
-    return model, style_losses, content_losses
-
-input_img = content_img.clone()
-# if you want to use white noise by using the following code:
-#
-# .. code-block:: python
-#
-#    input_img = torch.randn(content_img.data.size())
-
-# add the original input image to the figure:
-# plt.figure()
-# imshow(input_img, title='Input Image')  
-
-def get_input_optimizer(input_img):
+    # Initialize optimizer
     optimizer = optim.LBFGS([input_img])
-    return optimizer
 
-def run_style_transfer(cnn, normalization_mean, normalization_std,
-                       content_img, style_img, input_img, num_steps=500,
-                       style_weight=1000000, content_weight=1):
-    """Run the style transfer."""
-    print('Building the style transfer model..')
-    model, style_losses, content_losses = get_style_model_and_losses(cnn,
-        normalization_mean, normalization_std, style_img, content_img)
-
-    # We want to optimize the input and not the model parameters so we
-    # update all the requires_grad fields accordingly
-    input_img.requires_grad_(True)
-    # We also put the model in evaluation mode, so that specific layers
-    # such as dropout or batch normalization layers behave correctly.
-    model.eval()
-    model.requires_grad_(False)
-
-    optimizer = get_input_optimizer(input_img)
-
-    print('Optimizing..')
+    # Run style transfer optimization
     run = [0]
     while run[0] <= num_steps:
 
         def closure():
-            # correct the values of updated input image
-            with torch.no_grad():
-                input_img.clamp_(0, 1)
+            # Correct values of updated input image
+            input_img.data.clamp_(0, 1)
 
             optimizer.zero_grad()
             model(input_img)
@@ -267,7 +93,7 @@ def run_style_transfer(cnn, normalization_mean, normalization_std,
 
             run[0] += 1
             if run[0] % 50 == 0:
-                print("run {}:".format(run))
+                print("Step {}:".format(run[0]))
                 print('Style Loss : {:4f} Content Loss: {:4f}'.format(
                     style_score.item(), content_score.item()))
                 print()
@@ -276,47 +102,126 @@ def run_style_transfer(cnn, normalization_mean, normalization_std,
 
         optimizer.step(closure)
 
-    # a last correction...
-    with torch.no_grad():
-        input_img.clamp_(0, 1)
+    # Clamp values of input image
+    input_img.data.clamp_(0, 1)
 
     return input_img
 
+def save_image(output_img, output_folder):
+    # Convert tensor to PIL image
+    output_img_pil = transforms.ToPILImage()(output_img.squeeze(0).cpu())
 
-output = run_style_transfer(cnn, cnn_normalization_mean, cnn_normalization_std,
-                            content_img, style_img, input_img)
+    # Define the path to the Generated_data folder
+    data_folder = os.path.join(output_folder, "Generated_data")
+    temp_folder = os.path.join(output_folder, "temp_data")
 
-# plt.figure()
-# imshow(output, title='Output Image')
+    # Create the Generated_data folder if it doesn't exist
+    os.makedirs(data_folder, exist_ok=True)
+    os.makedirs(temp_folder, exist_ok=True)
 
-plt.ioff()
-plt.show()
+    # Generate a unique filename using timestamp
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    filename = f"output_{timestamp}.png"
 
-out_t = output.data.squeeze()
-output_img = transforms.ToPILImage()(out_t)
+    # Save the output image in the Generated_data folder
+    output_img_path = os.path.join(data_folder, filename)
+    output_img_pil.save(output_img_path)
+    print(f"Image saved in Generated_data folder: {output_img_path}")
 
-# Define the path to the Generated_data folder
-data_folder = "Server/Generated_data"
-temp_folder = "Server/temp_data"
+    # Define the filename for the output image
+    filename = "output.png"
 
-# Create the Generated_data folder if it doesn't exist
-if not os.path.exists(data_folder):
-    os.makedirs(data_folder)
+    # Save the output image in the temp folder, overriding existing file if present
+    temp_file_path = os.path.join(temp_folder, filename)
+    output_img_pil.save(temp_file_path)
+    print(f"Image saved in temporary file: {temp_file_path}")
 
-if not os.path.exists(temp_folder):
-    os.makedirs(temp_folder)
 
-# Save the output image with the same fixed filename in the temp folder
-temp_file_path = os.path.join(temp_folder, "output.png")
-output_img.save(temp_file_path)
+def get_style_model_and_losses(cnn, normalization, style_img, content_img,
+                               content_layers=['conv_4'], style_layers=['conv_1', 'conv_2', 'conv_3', 'conv_4', 'conv_5']):
+    model = nn.Sequential(normalization)
+    style_losses = []
+    content_losses = []
 
-print(f"Image saved in temporary file: {temp_file_path}")
+    i = 0
+    for layer in cnn.children():
+        if isinstance(layer, nn.Conv2d):
+            i += 1
+            name = f'conv_{i}'
+        elif isinstance(layer, nn.ReLU):
+            name = f'relu_{i}'
+            layer = nn.ReLU(inplace=False)
+        elif isinstance(layer, nn.MaxPool2d):
+            name = f'pool_{i}'
+        elif isinstance(layer, nn.BatchNorm2d):
+            name = f'bn_{i}'
+        else:
+            raise RuntimeError(f'Unrecognized layer: {layer.__class__.__name__}')
 
-# Generate a unique filename using timestamp
-timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-filename = f"output_{timestamp}.png"
+        model.add_module(name, layer)
 
-# Save the output image in the Generated_data folder
-output_img.save(os.path.join(data_folder, filename))
+        if name in content_layers:
+            target = model(content_img).detach()
+            content_loss = ContentLoss(target)
+            model.add_module(f'content_loss_{i}', content_loss)
+            content_losses.append(content_loss)
 
-print("Image saved in Generated_data folder")
+        if name in style_layers:
+            target_feature = model(style_img).detach()
+            style_loss = StyleLoss(target_feature)
+            model.add_module(f'style_loss_{i}', style_loss)
+            style_losses.append(style_loss)
+
+    return model, style_losses, content_losses
+
+class Normalization(nn.Module):
+    def __init__(self, mean, std):
+        super(Normalization, self).__init__()
+        self.mean = torch.tensor(mean).view(-1, 1, 1)
+        self.std = torch.tensor(std).view(-1, 1, 1)
+
+    def forward(self, img):
+        return (img - self.mean) / self.std
+
+class ContentLoss(nn.Module):
+    def __init__(self, target):
+        super(ContentLoss, self).__init__()
+        self.target = target.detach()
+
+    def forward(self, input):
+        self.loss = F.mse_loss(input, self.target)
+        return input
+
+class StyleLoss(nn.Module):
+    def __init__(self, target_feature):
+        super(StyleLoss, self).__init__()
+        self.target = gram_matrix(target_feature).detach()
+
+    def forward(self, input):
+        G = gram_matrix(input)
+        self.loss = F.mse_loss(G, self.target)
+        return input
+
+def gram_matrix(input):
+    a, b, c, d = input.size()
+    features = input.view(a * b, c * d)
+    G = torch.mm(features, features.t())
+    return G.div(a * b * c * d)
+
+
+# Define your perform_style_transfer function here
+
+# # Call the function for testing
+# if __name__ == "__main__":
+#     # Define paths to content and style images
+#     content_img_path = "Server/data2/HERO.png"
+#     style_img_path = "Server/data2/picasso.jpg"
+
+#     # content_img_path = "data2/HERO.jpg"
+#     # style_img_path = "data2/picasso.jpg"
+
+#     # Define output folder where the generated image will be saved
+#     output_folder = "temp_data"
+
+#     # Call the perform_style_transfer function
+#     perform_style_transfer(content_img_path, style_img_path, output_folder)

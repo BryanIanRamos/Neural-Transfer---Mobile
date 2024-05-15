@@ -5,9 +5,7 @@ from PIL import Image
 
 import subprocess
 
-# from style_transfer import style_transfer
-# from Server.style_transfer import style_transfer
-
+from style_transfer import perform_style_transfer
 
 app = Flask(__name__)
 
@@ -29,38 +27,45 @@ def upload_image():
         file.save(filename)
         return jsonify({'message': 'File uploaded successfully', 'filename': filename})
 
-@app.route('/get_image', methods=['GET'])
-def get_image():
-    image_path = os.path.join(os.path.dirname(__file__), "image.png")
-    try:
-        with open(image_path, 'rb') as f:
-            image_bytes = f.read()
-    except FileNotFoundError:
-        print("Image not found")
-        return 'Image not found', 404
+@app.route('/print_info', methods=['POST'])
+def print_info():
+    # Get the values from the request
+    name = request.form.get('name')
+    age = request.form.get('age')
+    sex = request.form.get('sex')
 
-    return send_file(io.BytesIO(image_bytes), mimetype='image/png')
+    # Pass the values to the other file to be printed
+    # style_transfer.print_info(name, age, sex)
 
-@app.route('/get_result', methods=['GET'])
-def get_result():
-    folder_path = 'Server/data2'
-    file_directory = "temp_data"
-    temp_filename = "output.png"
-    style_img_path = os.path.join(folder_path, 'dancing.jpg')
-    content_img_path = os.path.join(folder_path, 'HERO.jpg')
+    return jsonify({'message': 'Information received and printed successfully'})
 
-    # Check if the style and content images exist
-    if os.path.exists(style_img_path) and os.path.exists(content_img_path):
-        # Perform style transfer
-        subprocess.run(["python", "Server/style_transfer.py"])
-
-        print(file_directory)
-        print(temp_filename)
-
-        return send_from_directory(file_directory, temp_filename)
-    else:
-        return jsonify({'message': 'Files not found in folder.'}), 404
+# Define the route for performing style transfer
+@app.route('/perform_style_transfer', methods=['POST'])
+def perform_style_transfer_route():
+    # Check if files are in the request
+    if 'content_img_path' not in request.files:
+        return jsonify({"error": "Content image is required."}), 400
+    if 'style_img_path' not in request.files:
+        return jsonify({"error": "Style image is required."}), 400
     
+    # Get the content and style images from the request
+    content_img = request.files['content_img_path']
+    style_img = request.files['style_img_path']
+
+    # Check if file names are empty
+    if content_img.filename == '':
+        return jsonify({"error": "Content image file name is empty."}), 400
+    if style_img.filename == '':
+        return jsonify({"error": "Style image file name is empty."}), 400
+
+    # Define output folder where the generated image will be saved
+    output_folder = "temp_data"
+
+    # Call the perform_style_transfer function
+    # perform_style_transfer(content_img_path, style_img_path, output_folder)
+
+    # Return success response
+    return jsonify({"message": "Style transfer completed successfully."})
 
 @app.route('/get_data', methods=['GET'])
 def get_data():
