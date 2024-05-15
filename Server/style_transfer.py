@@ -4,6 +4,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 import os
 import uuid
+import glob
 
 from PIL import Image
 from datetime import datetime
@@ -15,22 +16,63 @@ from torchvision.models import vgg19, VGG19_Weights
 
 import copy
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-torch.set_default_device(device)
 
-imsize = 512 if torch.cuda.is_available() else 128
+# Set the image size based on whether a CUDA-enabled GPU is available
+imsize = 512 
+# if torch.cuda.is_available() else 128
 
-loader = transforms.Compose([
-    transforms.Resize(imsize),
-    transforms.ToTensor()])
+def image_loader(path):
+    image = Image.open(path)
+    loader = transforms.Compose([
+        transforms.Resize((imsize, imsize)), # Adjust the size as needed
+        transforms.ToTensor()
+    ])
+    image = loader(image).unsqueeze(0)
+    return image
 
-def image_loader(image_name):
-  image = Image.open(image_name)
-  image = loader(image).unsqueeze(0)
-  return image.to(device, torch.float)
+def find_image(directory, base_name):
+    supported_formats = ['*.jpg', '*.jpeg', '*.png']
+    for format in supported_formats:
+        files = glob.glob(os.path.join(directory, base_name + format))
+        if files:
+            return files[0]
+    return None
+
+# Define the directories
+picasso_dir = "Server/data2/"
+hero_dir = "Server/data2/"
+
+# Find the images
+picasso_path = find_image(picasso_dir, "picasso")
+hero_path = find_image(hero_dir, "HERO")
+
+# Load the images
+if picasso_path:
+    style_img = image_loader(picasso_path)
+else:
+    raise FileNotFoundError("Picasso image not found.")
+
+if hero_path:
+    content_img = image_loader(hero_path)
+else:
+    raise FileNotFoundError("HERO image not found.")
+
+# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# torch.set_default_device(device)
+
+# imsize = 512 if torch.cuda.is_available() else 128
+
+# loader = transforms.Compose([
+#     transforms.Resize(imsize),
+#     transforms.ToTensor()])
+
+# def image_loader(image_name):
+#   image = Image.open(image_name)
+#   image = loader(image).unsqueeze(0) 
+#   return image.to(device, torch.float)
  
-style_img = image_loader("Server/data2/picasso.jpg")
-content_img = image_loader("Server/data2/HERO.jpg")
+# style_img = image_loader("Server/data2/picasso.jpg")
+# content_img = image_loader("Server/data2/HERO.png")
 
 assert style_img.size() == content_img.size(), \
     "we need to import style and content images of the same size"
@@ -174,14 +216,14 @@ input_img = content_img.clone()
 
 # add the original input image to the figure:
 # plt.figure()
-# imshow(input_img, title='Input Image')
+# imshow(input_img, title='Input Image')  
 
 def get_input_optimizer(input_img):
     optimizer = optim.LBFGS([input_img])
     return optimizer
 
 def run_style_transfer(cnn, normalization_mean, normalization_std,
-                       content_img, style_img, input_img, num_steps=1000,
+                       content_img, style_img, input_img, num_steps=500,
                        style_weight=1000000, content_weight=1):
     """Run the style transfer."""
     print('Building the style transfer model..')
