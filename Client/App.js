@@ -37,12 +37,15 @@ const App = () => {
       return;
     }
 
-    const contentResult = await ImagePicker.launchImageLibraryAsync();
+    const contentResult = await ImagePicker.launchImageLibraryAsync({
+      allowsEditing: true,
+      aspect: [1, 1], // Set aspect ratio to 1:1 for square crop
+      quality: 1,
+    });
     if (contentResult.cancelled === true) {
       return;
     }
 
-    // Accessing the URI from the assets array
     const selectedUri = contentResult.assets[0]?.uri;
     setSelectedContent(selectedUri);
     console.log("Selected Content image URI:", selectedUri);
@@ -60,34 +63,48 @@ const App = () => {
       return;
     }
 
-    const styleResult = await ImagePicker.launchImageLibraryAsync();
+    const styleResult = await ImagePicker.launchImageLibraryAsync({
+      allowsEditing: true,
+      aspect: [1, 1], // Set aspect ratio to 1:1 for square crop
+      quality: 1,
+    });
     if (styleResult.cancelled === true) {
       return;
     }
 
-    // Accessing the URI from the assets array
     const selectedUri = styleResult.assets[0]?.uri;
     setSelectImageStyle(selectedUri);
     console.log("Selected Style image URI:", selectedUri);
-
-    // Upload the image to the server
-    // uploadImage(selectedUri);
   };
 
-  const uploadImage = async (uri) => {
+  const uploadImage = async (uri1, uri2) => {
     try {
+      console.log("URI 1: ", uri1);
+      console.log("URI 2: ", uri2);
+
       const formData = new FormData();
-      formData.append("image", {
-        uri,
-        name: "image.jpg",
+      formData.append("content_img", {
+        uri: uri1,
+        name: "content.jpg",
+        type: "image/jpg",
+      });
+      formData.append("style_img", {
+        uri: uri2,
+        name: "style.jpg",
         type: "image/jpg",
       });
 
-      const response = await axios.post(`${API}/upload_image`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      console.log("FormData: ", formData);
+
+      const response = await axios.post(
+        `${API}/perform_style_transfer`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
 
       console.log("Upload response:", response.data);
     } catch (error) {
@@ -115,6 +132,14 @@ const App = () => {
         )}
         <TouchableOpacity onPress={styleImagePicker} style={styles.button}>
           <Text style={styles.buttonText}>Select Image</Text>
+        </TouchableOpacity>
+      </View>
+      <View>
+        <TouchableOpacity
+          onPress={() => uploadImage(selectedContent, selectedImageStyle)}
+          style={styles.button}
+        >
+          <Text style={styles.buttonText}>Upload Image</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

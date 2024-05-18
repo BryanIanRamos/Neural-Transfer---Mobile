@@ -27,6 +27,14 @@ def upload_image():
         file.save(filename)
         return jsonify({'message': 'File uploaded successfully', 'filename': filename})
 
+@app.route('/get_image', methods=['GET'])
+def get_image():
+    if request.method == 'GET':
+        image_path = 'Generated_Data/temp_data/output.png'
+        return send_file(image_path, mimetype='image/png')
+    else:
+        return 'Method Not Allowed', 405
+
 @app.route('/print_info', methods=['POST'])
 def print_info():
     # Get the values from the request
