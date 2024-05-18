@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import {
-  StyleSheet,
-  Text,
-  View,
-  Image,
   SafeAreaView,
+  ScrollView,
+  View,
+  Text,
+  Image,
   TouchableOpacity,
-  Platform,
+  StyleSheet,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import axios from "axios";
@@ -14,19 +14,21 @@ import axios from "axios";
 const App = () => {
   const [selectedContent, setSelectedContent] = useState(null);
   const [selectedImageStyle, setSelectImageStyle] = useState(null);
+  const [getResult, setGetResult] = useState(null);
+  const [styleTransferCompleted, setStyleTransferCompleted] = useState(false);
   const API = "http://192.168.1.11:5000";
 
-  useEffect(() => {
-    (async () => {
-      if (Platform.OS !== "web") {
-        const { status } =
-          await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (status !== "granted") {
-          alert("Permission to access camera roll is required!");
-        }
-      }
-    })();
-  }, []);
+  // useEffect(() => {
+  //   (async () => {
+  //     if (Platform.OS !== "web") {
+  //       const { status } =
+  //         await ImagePicker.requestMediaLibraryPermissionsAsync();
+  //       if (status !== "granted") {
+  //         alert("Permission to access camera roll is required!");
+  //       }
+  //     }
+  //   })();
+  // }, []);
 
   const contentImagePicker = async () => {
     const permissionResult =
@@ -79,6 +81,8 @@ const App = () => {
 
   const uploadImage = async (uri1, uri2) => {
     try {
+      setStyleTransferCompleted(false);
+
       console.log("URI 1: ", uri1);
       console.log("URI 2: ", uri2);
 
@@ -107,65 +111,105 @@ const App = () => {
       );
 
       console.log("Upload response:", response.data);
+      setStyleTransferCompleted(true);
     } catch (error) {
       console.error("Upload error:", error);
     }
   };
 
+  const resultPicker = async () => {
+    try {
+      const timestamp = Date.now(); // Unique timestamp
+      const response = await axios.get(
+        `${API}/get_image?timestamp=${timestamp}`
+      );
+      const resultUri = response.config.url; // Adjust this based on your backend response
+
+      setGetResult(resultUri);
+      console.log("Result image URI:", resultUri);
+    } catch (error) {
+      console.error("Error fetching result image:", error);
+    }
+  };
+
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <View style={styles.container}>
-        {selectedContent ? (
-          <Image source={{ uri: selectedContent }} style={styles.image} />
-        ) : (
-          <Text>No image selected</Text>
-        )}
-        <TouchableOpacity onPress={contentImagePicker} style={styles.button}>
-          <Text style={styles.buttonText}>Select Image</Text>
-        </TouchableOpacity>
-      </View>
-      <View style={styles.container}>
-        {selectedImageStyle ? (
-          <Image source={{ uri: selectedImageStyle }} style={styles.image} />
-        ) : (
-          <Text>No image selected</Text>
-        )}
-        <TouchableOpacity onPress={styleImagePicker} style={styles.button}>
-          <Text style={styles.buttonText}>Select Image</Text>
-        </TouchableOpacity>
-      </View>
-      <View>
-        <TouchableOpacity
-          onPress={() => uploadImage(selectedContent, selectedImageStyle)}
-          style={styles.button}
-        >
-          <Text style={styles.buttonText}>Upload Image</Text>
-        </TouchableOpacity>
-      </View>
+    <SafeAreaView style={styles.safeAreaView}>
+      <ScrollView>
+        <View style={styles.container}>
+          {selectedContent ? (
+            <Image source={{ uri: selectedContent }} style={styles.image} />
+          ) : (
+            <Text>No image selected</Text>
+          )}
+          <TouchableOpacity onPress={contentImagePicker} style={styles.button}>
+            <Text style={styles.buttonText}>Select Image</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={styles.container}>
+          {selectedImageStyle ? (
+            <Image source={{ uri: selectedImageStyle }} style={styles.image} />
+          ) : (
+            <Text>No image selected</Text>
+          )}
+          <TouchableOpacity onPress={styleImagePicker} style={styles.button}>
+            <Text style={styles.buttonText}>Select Image</Text>
+          </TouchableOpacity>
+        </View>
+        <View>
+          <TouchableOpacity
+            onPress={() => uploadImage(selectedContent, selectedImageStyle)}
+            style={styles.button}
+          >
+            <Text style={styles.buttonText}>Upload Image</Text>
+          </TouchableOpacity>
+        </View>
+        <View>
+          {getResult ? (
+            <Image source={{ uri: getResult }} style={styles.image} />
+          ) : (
+            <Text>No image selected</Text>
+          )}
+          <TouchableOpacity
+            onPress={resultPicker}
+            style={[
+              styles.button,
+              styleTransferCompleted ? null : styles.disabledButton,
+            ]}
+            disabled={!styleTransferCompleted}
+          >
+            <Text>Get Image</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  safeAreaView: {
     flex: 1,
-    justifyContent: "center",
+  },
+  container: {
     alignItems: "center",
+    marginBottom: 20,
   },
   image: {
     width: 200,
     height: 200,
-    resizeMode: "cover",
-    marginBottom: 20,
   },
   button: {
-    backgroundColor: "skyblue",
+    backgroundColor: "blue",
     padding: 10,
     borderRadius: 5,
+    marginTop: 10,
   },
   buttonText: {
     color: "white",
-    fontSize: 20,
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  disabledButton: {
+    backgroundColor: "gray",
   },
 });
 

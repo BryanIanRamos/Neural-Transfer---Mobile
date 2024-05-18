@@ -12,6 +12,7 @@
     "axios": "^1.6.8",
     "expo": "~50.0.17",
     "expo-document-picker": "~11.10.1",
+    "expo-file-system": "^17.0.1",
     "expo-image-picker": "^14.7.1",
     "expo-media-library": "^15.9.2",
     "expo-status-bar": "~1.11.1",
