@@ -112,7 +112,7 @@ def save_image(output_img, output_folder):
     output_img_pil = transforms.ToPILImage()(output_img.squeeze(0).cpu())
 
     # Define the path to the Generated_data folder
-    data_folder = os.path.join(output_folder, "Generated_data")
+    data_folder = os.path.join(output_folder, "data")
     temp_folder = os.path.join(output_folder, "temp_data")
 
     # Create the Generated_data folder if it doesn't exist

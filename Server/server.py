@@ -43,14 +43,14 @@ def print_info():
 @app.route('/perform_style_transfer', methods=['POST'])
 def perform_style_transfer_route():
     # Check if files are in the request
-    if 'content_img_path' not in request.files:
+    if 'content_img' not in request.files:
         return jsonify({"error": "Content image is required."}), 400
-    if 'style_img_path' not in request.files:
+    if 'style_img' not in request.files:
         return jsonify({"error": "Style image is required."}), 400
     
     # Get the content and style images from the request
-    content_img = request.files['content_img_path']
-    style_img = request.files['style_img_path']
+    content_img = request.files['content_img']
+    style_img = request.files['style_img']
 
     # Check if file names are empty
     if content_img.filename == '':
@@ -59,10 +59,10 @@ def perform_style_transfer_route():
         return jsonify({"error": "Style image file name is empty."}), 400
 
     # Define output folder where the generated image will be saved
-    output_folder = "temp_data"
+    output_folder = "Server/Generated_Data"
 
     # Call the perform_style_transfer function
-    # perform_style_transfer(content_img_path, style_img_path, output_folder)
+    perform_style_transfer(content_img, style_img, output_folder)
 
     # Return success response
     return jsonify({"message": "Style transfer completed successfully."})

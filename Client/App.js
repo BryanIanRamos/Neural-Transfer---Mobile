@@ -12,8 +12,9 @@ import * as ImagePicker from "expo-image-picker";
 import axios from "axios";
 
 const App = () => {
-  const [selectedImage, setSelectedImage] = useState(null);
-  const API = "http://192.168.1.55:5000";
+  const [selectedContent, setSelectedContent] = useState(null);
+  const [selectedImageStyle, setSelectImageStyle] = useState(null);
+  const API = "http://192.168.1.11:5000";
 
   useEffect(() => {
     (async () => {
@@ -27,26 +28,50 @@ const App = () => {
     })();
   }, []);
 
-  const openImagePickerAsync = async () => {
+  const contentImagePicker = async () => {
     const permissionResult =
       await ImagePicker.requestMediaLibraryPermissionsAsync();
+
     if (permissionResult.granted === false) {
       alert("Permission to access camera roll is required!");
       return;
     }
 
-    const pickerResult = await ImagePicker.launchImageLibraryAsync();
-    if (pickerResult.cancelled === true) {
+    const contentResult = await ImagePicker.launchImageLibraryAsync();
+    if (contentResult.cancelled === true) {
       return;
     }
 
     // Accessing the URI from the assets array
-    const selectedUri = pickerResult.assets[0]?.uri;
-    setSelectedImage(selectedUri);
-    console.log("Selected image URI:", selectedUri);
+    const selectedUri = contentResult.assets[0]?.uri;
+    setSelectedContent(selectedUri);
+    console.log("Selected Content image URI:", selectedUri);
 
     // Upload the image to the server
-    uploadImage(selectedUri);
+    // uploadImage(selectedUri);
+  };
+
+  const styleImagePicker = async () => {
+    const permissionResult =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (permissionResult.granted === false) {
+      alert("Permission to access camera roll is required!");
+      return;
+    }
+
+    const styleResult = await ImagePicker.launchImageLibraryAsync();
+    if (styleResult.cancelled === true) {
+      return;
+    }
+
+    // Accessing the URI from the assets array
+    const selectedUri = styleResult.assets[0]?.uri;
+    setSelectImageStyle(selectedUri);
+    console.log("Selected Style image URI:", selectedUri);
+
+    // Upload the image to the server
+    // uploadImage(selectedUri);
   };
 
   const uploadImage = async (uri) => {
@@ -73,12 +98,22 @@ const App = () => {
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <View style={styles.container}>
-        {selectedImage ? (
-          <Image source={{ uri: selectedImage }} style={styles.image} />
+        {selectedContent ? (
+          <Image source={{ uri: selectedContent }} style={styles.image} />
         ) : (
           <Text>No image selected</Text>
         )}
-        <TouchableOpacity onPress={openImagePickerAsync} style={styles.button}>
+        <TouchableOpacity onPress={contentImagePicker} style={styles.button}>
+          <Text style={styles.buttonText}>Select Image</Text>
+        </TouchableOpacity>
+      </View>
+      <View style={styles.container}>
+        {selectedImageStyle ? (
+          <Image source={{ uri: selectedImageStyle }} style={styles.image} />
+        ) : (
+          <Text>No image selected</Text>
+        )}
+        <TouchableOpacity onPress={styleImagePicker} style={styles.button}>
           <Text style={styles.buttonText}>Select Image</Text>
         </TouchableOpacity>
       </View>
