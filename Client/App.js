@@ -15,6 +15,7 @@ const App = () => {
   const [selectedContent, setSelectedContent] = useState(null);
   const [selectedImageStyle, setSelectImageStyle] = useState(null);
   const [getResult, setGetResult] = useState(null);
+  const [getStyleImage, setGetStyleImage] = useState(null);
   const [styleTransferCompleted, setStyleTransferCompleted] = useState(false);
   const API = "http://192.168.1.11:5000";
 
@@ -29,6 +30,27 @@ const App = () => {
   //     }
   //   })();
   // }, []);
+
+  // Sample image URLs
+  const imageUrls = [
+    "http://192.168.1.11:8081/assets/?unstable_path=.%2Fstyles_img%2F2150159191.jpg&platform=android&hash=d6329fddc5f717f84eccb17428352992",
+    "http://192.168.1.11:8081/assets/?unstable_path=.%2Fstyles_img%2F25739.jpg&platform=android&hash=fe611b5ace91bb276e3300f905b776aa",
+    "http://192.168.1.11:8081/assets/?unstable_path=.%2Fstyles_img%2F2871.jpg&platform=android&hash=1e19ab63752ee6dd8db1795d12660e8e",
+    "http://192.168.1.11:8081/assets/?unstable_path=.%2Fstyles_img%2F4922.jpg&platform=android&hash=e88e1b8f25e6354ba139683551b5a4f6",
+    "http://192.168.1.11:8081/assets/?unstable_path=.%2Fstyles_img%2F562.jpg&platform=android&hash=a4fd5b096426167b6f3c33ab78013a5f",
+    "http://192.168.1.11:8081/assets/?unstable_path=.%2Fstyles_img%2F57491.jpg&platform=android&hash=f9fdfe249218cc5265ccd4ddbbc39bce",
+    "http://192.168.1.11:8081/assets/?unstable_path=.%2Fstyles_img%2Fbeautiful-cubism-graffiti.jpg&platform=android&hash=75e1d1f035fec1ca47be83bf86bbe65a",
+    "http://192.168.1.11:8081/assets/?unstable_path=.%2Fstyles_img%2Fblue-paint-textured-background-aesthetic-diy-experimental-art.jpg&platform=android&hash=67307604b30002981dca5284a9bb1087",
+    "http://192.168.1.11:8081/assets/?unstable_path=.%2Fstyles_img%2Fcolor_style.jpg&platform=android&hash=9088841c07de107ffe648e6f584d812a",
+    "http://192.168.1.11:8081/assets/?unstable_path=.%2Fstyles_img%2Fdancing.jpg&platform=android&hash=0a2df538901452d639170a2ed89815a4",
+    "http://192.168.1.11:8081/assets/?unstable_path=.%2Fstyles_img%2Fpicasso.jpg&platform=android&hash=d1d60fc3f9d0b22d2d826c47934a37ea",
+  ];
+
+  // const resolvedImageUrls = imageUrls.map(
+  //   (image) => Image.resolveAssetSource(image).uri
+  // );
+
+  // console.log(resolvedImageUrls);
 
   const contentImagePicker = async () => {
     const permissionResult =
@@ -77,6 +99,13 @@ const App = () => {
     const selectedUri = styleResult.assets[0]?.uri;
     setSelectImageStyle(selectedUri);
     console.log("Selected Style image URI:", selectedUri);
+  };
+
+  const sampleStylePicker = (uri, index) => {
+    console.log("Image URI:", uri);
+    console.log("Image Index:", index);
+    setSelectImageStyle(uri);
+    // Add your style picker logic here
   };
 
   const uploadImage = async (uri1, uri2) => {
@@ -135,39 +164,73 @@ const App = () => {
   return (
     <SafeAreaView style={styles.safeAreaView}>
       <ScrollView>
-        <View style={styles.container}>
-          {selectedContent ? (
-            <Image source={{ uri: selectedContent }} style={styles.image} />
-          ) : (
-            <Text>No image selected</Text>
-          )}
-          <TouchableOpacity onPress={contentImagePicker} style={styles.button}>
-            <Text style={styles.buttonText}>Select Image</Text>
-          </TouchableOpacity>
+        <View style={styles.rowContainer}>
+          <View style={styles.container}>
+            <TouchableOpacity onPress={contentImagePicker}>
+              {selectedContent ? (
+                <Image source={{ uri: selectedContent }} style={styles.image} />
+              ) : (
+                <View style={styles.imageBorder}>
+                  <Text>No result image yet</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
+          <View style={styles.container}>
+            <TouchableOpacity onPress={styleImagePicker}>
+              {selectedImageStyle ? (
+                <Image
+                  source={{ uri: selectedImageStyle }}
+                  // source={imageUrl.uri ? imageUrl : { uri: imageUrl }}
+                  style={styles.image}
+                />
+              ) : (
+                <View style={styles.imageBorder}>
+                  <Text>Add Style Image</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
-        <View style={styles.container}>
-          {selectedImageStyle ? (
-            <Image source={{ uri: selectedImageStyle }} style={styles.image} />
-          ) : (
-            <Text>No image selected</Text>
-          )}
-          <TouchableOpacity onPress={styleImagePicker} style={styles.button}>
-            <Text style={styles.buttonText}>Select Image</Text>
-          </TouchableOpacity>
+        {/* Test  */}
+        <View>
+          <ScrollView horizontal>
+            <View style={styles.subImageContainer}>
+              {imageUrls.map((imageUrl, index) => (
+                <TouchableOpacity
+                  key={index}
+                  onPress={() => {
+                    sampleStylePicker(imageUrl, index),
+                      console.log(imageUrl.uri);
+                  }}
+                >
+                  <Image
+                    key={index}
+                    // source={imageUrl}
+                    source={{ uri: imageUrl }}
+                    style={styles.styleImage}
+                  />
+                </TouchableOpacity>
+              ))}
+            </View>
+          </ScrollView>
         </View>
+
         <View>
           <TouchableOpacity
             onPress={() => uploadImage(selectedContent, selectedImageStyle)}
             style={styles.button}
           >
-            <Text style={styles.buttonText}>Upload Image</Text>
+            <Text style={styles.buttonText}>Upload Images</Text>
           </TouchableOpacity>
         </View>
         <View>
           {getResult ? (
             <Image source={{ uri: getResult }} style={styles.image} />
           ) : (
-            <Text>No image selected</Text>
+            <View>
+              <Text>No result image yet</Text>
+            </View>
           )}
           <TouchableOpacity
             onPress={resultPicker}
@@ -177,7 +240,7 @@ const App = () => {
             ]}
             disabled={!styleTransferCompleted}
           >
-            <Text>Get Image</Text>
+            <Text style={styles.buttonText}>Get Result Image</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -188,14 +251,23 @@ const App = () => {
 const styles = StyleSheet.create({
   safeAreaView: {
     flex: 1,
+    margin: 20,
   },
   container: {
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: 5,
+  },
+  subImageContainer: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   image: {
-    width: 200,
-    height: 200,
+    width: 160,
+    height: 160,
+  },
+  styleImage: {
+    width: 100,
+    height: 100,
   },
   button: {
     backgroundColor: "blue",
@@ -210,6 +282,17 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     backgroundColor: "gray",
+  },
+  rowContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+  },
+  imageBorder: {
+    width: 160,
+    height: 160,
+    borderWidth: 2,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });
 
