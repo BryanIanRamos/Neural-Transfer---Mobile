@@ -59,6 +59,11 @@ def perform_style_transfer_route():
     # Get the content and style images from the request
     content_img = request.files['content_img']
     style_img = request.files['style_img']
+    imgSize = int(request.form['img_size'])
+    transSteps = int(request.form['num_steps'])
+
+    print("imgSize:", imgSize)
+    print("transSteps:", transSteps)
 
     # Check if file names are empty
     if content_img.filename == '':
@@ -70,7 +75,7 @@ def perform_style_transfer_route():
     output_folder = "Server/Generated_Data"
 
     # Call the perform_style_transfer function
-    perform_style_transfer(content_img, style_img, output_folder)
+    perform_style_transfer(content_img, style_img, output_folder, imgSize, transSteps)
 
     # Return success response
     return jsonify({"message": "Style transfer completed successfully."})
