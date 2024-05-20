@@ -2,7 +2,8 @@ from flask import Flask, request, jsonify, send_file, send_from_directory
 import os
 import io
 from PIL import Image
-
+from datetime import datetime
+import base64 
 import subprocess
 
 from style_transfer import perform_style_transfer
@@ -34,6 +35,7 @@ def get_image():
         return send_file(image_path, mimetype='image/png')
     else:
         return 'Method Not Allowed', 405
+
 
 @app.route('/print_info', methods=['POST'])
 def print_info():

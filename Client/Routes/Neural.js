@@ -19,11 +19,12 @@ const Neural = ({ navigation }) => {
   const [selectedImageStyle, setSelectImageStyle] = useState(null);
   const [getResult, setGetResult] = useState(null);
   const [getStyleImage, setGetStyleImage] = useState(null);
+  const [getPending, setGetPinding] = useState(false);
   const [styleTransferCompleted, setStyleTransferCompleted] = useState(false);
   const API = "http://192.168.1.11:5000";
 
-  const [selectImgSize, setSelectImgSize] = useState("128px");
-  const [selectSteps, setSelectSteps] = useState("50 times");
+  const [selectImgSize, setSelectImgSize] = useState("128");
+  const [selectSteps, setSelectSteps] = useState("50");
 
   console.log("selectImgSize:", selectImgSize);
   console.log("selectSteps:", selectSteps);
@@ -120,6 +121,7 @@ const Neural = ({ navigation }) => {
   const uploadImage = async (uri1, uri2) => {
     try {
       setStyleTransferCompleted(false);
+      setGetPinding(true);
 
       console.log("Image Data:");
       console.log("URI 1: ", uri1);
@@ -153,6 +155,7 @@ const Neural = ({ navigation }) => {
 
       console.log("Upload response:", response.data);
       setStyleTransferCompleted(true);
+      setGetPinding(false);
     } catch (error) {
       console.error("Upload error:", error);
     }
@@ -175,9 +178,10 @@ const Neural = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.safeAreaView}>
-      <View>
+      <View style={{ marginVertical: 5 }}>
         <Button title="Back" onPress={() => navigation.navigate("Home")} />
       </View>
+
       <ScrollView>
         <View style={styles.rowContainer}>
           <View style={styles.container}>
@@ -243,8 +247,8 @@ const Neural = ({ navigation }) => {
               }
             >
               <Picker.Item label="128px" value="128" />
-              <Picker.Item label="256px" value="256 " />
-              <Picker.Item label="512px" value="512 " />
+              <Picker.Item label="256px" value="256" />
+              <Picker.Item label="512px" value="512" />
               <Picker.Item label="720px" value="720" />
             </Picker>
           </View>
@@ -288,22 +292,21 @@ const Neural = ({ navigation }) => {
           </TouchableOpacity>
         </View>
         <View>
-          {getResult ? (
-            <Image source={{ uri: getResult }} style={styles.image} />
-          ) : (
-            <View>
-              <Text>No result image yet</Text>
-            </View>
-          )}
           <TouchableOpacity
-            onPress={resultPicker}
+            onPress={() => navigation.navigate("Result")}
             style={[
               styles.button,
               styleTransferCompleted ? null : styles.disabledButton,
             ]}
             disabled={!styleTransferCompleted}
           >
-            <Text style={styles.buttonText}>Get Result Image</Text>
+            {styleTransferCompleted === null ? (
+              <Text style={styles.buttonText}>Get Result Image</Text>
+            ) : getPending === true ? (
+              <Text style={styles.buttonText}>Processing...</Text>
+            ) : (
+              <Text style={styles.buttonText}>Get Result Image</Text>
+            )}
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -337,7 +340,7 @@ const styles = StyleSheet.create({
     height: 100,
   },
   button: {
-    backgroundColor: "blue",
+    backgroundColor: "#38CCDD",
     padding: 10,
     borderRadius: 5,
     marginTop: 10,
@@ -346,6 +349,7 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 16,
     fontWeight: "bold",
+    textAlign: "center",
   },
   disabledButton: {
     backgroundColor: "gray",
