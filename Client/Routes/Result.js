@@ -12,12 +12,13 @@ import {
 } from "react-native";
 import axios from "axios";
 import * as FileSystem from "expo-file-system";
+import { API_KEY, API_URL } from "@env";
 
 export default function Result({ navigation }) {
   const [getResult, setGetResult] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
 
-  const API = "http://192.168.1.11:5000";
+  const API = API_KEY;
 
   const resultPicker = async () => {
     try {

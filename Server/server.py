@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_file, send_from_directory
+from flask import Flask, request, jsonify, send_file, send_from_directory, url_for, abort, make_response
 import os
 import io
 from PIL import Image
@@ -90,6 +90,48 @@ def get_data():
         'city': 'New York'
     }
     return jsonify(data)
+
+@app.route('/recent_images')
+def get_all_images():
+    try:
+        directory = 'Server/Generated_Data/data'
+        # Check if the directory exists
+        if not os.path.exists(directory):
+            abort(404, description="Directory not found")
+        
+        # List files in the directory
+        image_files = os.listdir(directory)
+        
+        # Filter out non-image files (basic filtering, assuming image files have common image extensions)
+        valid_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.bmp'}
+        image_files = [f for f in image_files if os.path.splitext(f)[1].lower() in valid_extensions]
+        
+        # If no images are found, return an appropriate message
+        if not image_files:
+            return jsonify({'message': 'No images found'}), 200
+        
+        # Generate URLs for each image
+        images = [url_for('get_image_source', filename=filename, _external=True) for filename in image_files]
+        response = make_response(jsonify({'images': images}), 200)
+        response.headers['Cache-Control'] = 'no-store'
+        return response
+
+    except Exception as e:
+        # Generic error handling, ideally you should log the error
+        return jsonify({'error': str(e)}), 500
+    
+@app.route('/images/<path:filename>')
+def get_image_source(filename):
+    try:
+        directory = 'Generated_Data/data'
+        response = send_from_directory(directory, filename)
+        response.headers['Cache-Control'] = 'no-store'
+        return response
+    except FileNotFoundError:
+        abort(404, description="File not found")
+    except Exception as e:
+        # Generic error handling, ideally you should log the error
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)

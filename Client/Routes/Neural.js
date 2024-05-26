@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import axios from "axios";
+import { API_KEY, API_URL } from "@env";
 
 import { Picker } from "@react-native-picker/picker";
 
@@ -21,7 +22,10 @@ const Neural = ({ navigation }) => {
   const [getStyleImage, setGetStyleImage] = useState(null);
   const [getPending, setGetPinding] = useState(false);
   const [styleTransferCompleted, setStyleTransferCompleted] = useState(false);
-  const API = "http://192.168.1.11:5000";
+  const API = API_URL.toString();
+
+  // console.log("API SERVER: ", API_KEY);
+  // console.log("API_URL: ", API);
 
   const [selectImgSize, setSelectImgSize] = useState("128");
   const [selectSteps, setSelectSteps] = useState("50");
@@ -43,17 +47,17 @@ const Neural = ({ navigation }) => {
 
   // Sample image URLs
   const imageUrls = [
-    "http://192.168.1.11:8081/assets/?unstable_path=.%2Fstyles_img%2F2150159191.jpg&platform=android&hash=d6329fddc5f717f84eccb17428352992",
-    "http://192.168.1.11:8081/assets/?unstable_path=.%2Fstyles_img%2F25739.jpg&platform=android&hash=fe611b5ace91bb276e3300f905b776aa",
-    "http://192.168.1.11:8081/assets/?unstable_path=.%2Fstyles_img%2F2871.jpg&platform=android&hash=1e19ab63752ee6dd8db1795d12660e8e",
-    "http://192.168.1.11:8081/assets/?unstable_path=.%2Fstyles_img%2F4922.jpg&platform=android&hash=e88e1b8f25e6354ba139683551b5a4f6",
-    "http://192.168.1.11:8081/assets/?unstable_path=.%2Fstyles_img%2F562.jpg&platform=android&hash=a4fd5b096426167b6f3c33ab78013a5f",
-    "http://192.168.1.11:8081/assets/?unstable_path=.%2Fstyles_img%2F57491.jpg&platform=android&hash=f9fdfe249218cc5265ccd4ddbbc39bce",
-    "http://192.168.1.11:8081/assets/?unstable_path=.%2Fstyles_img%2Fbeautiful-cubism-graffiti.jpg&platform=android&hash=75e1d1f035fec1ca47be83bf86bbe65a",
-    "http://192.168.1.11:8081/assets/?unstable_path=.%2Fstyles_img%2Fblue-paint-textured-background-aesthetic-diy-experimental-art.jpg&platform=android&hash=67307604b30002981dca5284a9bb1087",
-    "http://192.168.1.11:8081/assets/?unstable_path=.%2Fstyles_img%2Fcolor_style.jpg&platform=android&hash=9088841c07de107ffe648e6f584d812a",
-    "http://192.168.1.11:8081/assets/?unstable_path=.%2Fstyles_img%2Fdancing.jpg&platform=android&hash=0a2df538901452d639170a2ed89815a4",
-    "http://192.168.1.11:8081/assets/?unstable_path=.%2Fstyles_img%2Fpicasso.jpg&platform=android&hash=d1d60fc3f9d0b22d2d826c47934a37ea",
+    `${API}/assets/?unstable_path=.%2Fstyles_img%2F2150159191.jpg&platform=android&hash=d6329fddc5f717f84eccb17428352992`,
+    `${API}/assets/?unstable_path=.%2Fstyles_img%2F25739.jpg&platform=android&hash=fe611b5ace91bb276e3300f905b776aa`,
+    `${API}/assets/?unstable_path=.%2Fstyles_img%2F2871.jpg&platform=android&hash=1e19ab63752ee6dd8db1795d12660e8e`,
+    `${API}/assets/?unstable_path=.%2Fstyles_img%2F4922.jpg&platform=android&hash=e88e1b8f25e6354ba139683551b5a4f6`,
+    `${API}/assets/?unstable_path=.%2Fstyles_img%2F562.jpg&platform=android&hash=a4fd5b096426167b6f3c33ab78013a5f`,
+    `${API}/assets/?unstable_path=.%2Fstyles_img%2F57491.jpg&platform=android&hash=f9fdfe249218cc5265ccd4ddbbc39bce`,
+    `${API}/assets/?unstable_path=.%2Fstyles_img%2Fbeautiful-cubism-graffiti.jpg&platform=android&hash=75e1d1f035fec1ca47be83bf86bbe65a`,
+    `${API}/assets/?unstable_path=.%2Fstyles_img%2Fblue-paint-textured-background-aesthetic-diy-experimental-art.jpg&platform=android&hash=67307604b30002981dca5284a9bb1087`,
+    `${API}/assets/?unstable_path=.%2Fstyles_img%2Fcolor_style.jpg&platform=android&hash=9088841c07de107ffe648e6f584d812a`,
+    `${API}/assets/?unstable_path=.%2Fdancing.jpg&platform=android&hash=0a2df538901452d639170a2ed89815a4`,
+    `${API}/assets/?unstable_path=.%2Fstyles_img%2Fpicasso.jpg&platform=android&hash=d1d60fc3f9d0b22d2d826c47934a37ea`,
   ];
 
   // const resolvedImageUrls = imageUrls.map(
@@ -144,7 +148,7 @@ const Neural = ({ navigation }) => {
       console.log("FormData: ", formData);
 
       const response = await axios.post(
-        `${API}/perform_style_transfer`,
+        `${API_KEY}/perform_style_transfer`,
         formData,
         {
           headers: {
@@ -165,7 +169,7 @@ const Neural = ({ navigation }) => {
     try {
       const timestamp = Date.now(); // Unique timestamp
       const response = await axios.get(
-        `${API}/get_image?timestamp=${timestamp}`
+        `${API_KEY}/get_image?timestamp=${timestamp}`
       );
       const resultUri = response.config.url; // Adjust this based on your backend response
 
@@ -221,7 +225,7 @@ const Neural = ({ navigation }) => {
                   key={index}
                   onPress={() => {
                     sampleStylePicker(imageUrl, index),
-                      console.log(imageUrl.uri);
+                      console.log("Submitted Style Img URL: ", imageUrl.uri);
                   }}
                 >
                   <Image
