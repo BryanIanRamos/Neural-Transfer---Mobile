@@ -110,8 +110,10 @@ def get_all_images():
         if not image_files:
             return jsonify({'message': 'No images found'}), 200
         
-        # Generate URLs for each image
+        # Generate URLs for each image and reverse the list
         images = [url_for('get_image_source', filename=filename, _external=True) for filename in image_files]
+        images.reverse()  # Reverse the list
+        
         response = make_response(jsonify({'images': images}), 200)
         response.headers['Cache-Control'] = 'no-store'
         return response
@@ -119,6 +121,7 @@ def get_all_images():
     except Exception as e:
         # Generic error handling, ideally you should log the error
         return jsonify({'error': str(e)}), 500
+
     
 @app.route('/images/<path:filename>')
 def get_image_source(filename):

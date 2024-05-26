@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import {
   View,
   Text,
@@ -10,40 +11,27 @@ import {
   Modal,
   Alert,
 } from "react-native";
-import * as MediaLibrary from "expo-media-library"; // Import MediaLibrary for saving images
-import { useNavigation } from "@react-navigation/native"; // Import useNavigation hook
+import * as MediaLibrary from "expo-media-library";
 import axios from "axios";
-import { API_URL, API_KEY } from "@env"; // Ensure these are correctly set in your .env file
+import { API_URL, API_KEY } from "@env";
 
 export default function HomeScreen() {
-  const navigation = useNavigation(); // Initialize navigation hook
+  const navigation = useNavigation();
 
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedImage, setSelectedImage] = useState(null); // Track selected image
-  const [modalVisible, setModalVisible] = useState(false); // Modal visibility state
-
-  useEffect(() => {
-    fetchImages();
-  }, []);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
 
   const fetchImages = async () => {
     try {
-      const response = await axios.get(`${API_KEY}/recent_images`);
+      const response = await axios.get(`${API_KEY}/recent_images`); // corrected API_URL usage
       setImages(response.data.images);
       setLoading(false);
     } catch (error) {
       console.error(error);
     }
   };
-
-  if (loading) {
-    return (
-      <View style={styles.container}>
-        <Text>Loading...</Text>
-      </View>
-    );
-  }
 
   const openImageModal = (imageUrl) => {
     setSelectedImage(imageUrl);
@@ -70,12 +58,32 @@ export default function HomeScreen() {
     }
   };
 
+  // Fetch images on initial load and when screen gains focus
+  useEffect(() => {
+    fetchImages();
+  }, []);
+
+  // Use useFocusEffect to refresh images when screen gains focus
+  useFocusEffect(
+    useCallback(() => {
+      fetchImages();
+    }, [])
+  );
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <Text>Loading...</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <Text>Generate Your Own Art</Text>
       <Button
         title="Go to Neural Screen"
-        onPress={() => navigation.navigate("Neural")}
+        onPress={() => navigation.navigate("Generate")}
       />
       <Text>Recent Images</Text>
 
@@ -124,9 +132,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   imageContainer: {
-    borderWidth: 5,
+    borderWidth: 2,
     borderColor: "#000", // Set the border color
-    borderRadius: 10, // Optional, for rounded corners
+    borderRadius: 3, // Optional, for rounded corners
     margin: 5,
   },
   image: {
