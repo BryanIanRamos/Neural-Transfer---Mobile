@@ -5,6 +5,7 @@ from PIL import Image
 from datetime import datetime
 import base64 
 import subprocess
+import time
 
 from style_transfer import perform_style_transfer
 
@@ -37,21 +38,11 @@ def get_image():
         return 'Method Not Allowed', 405
 
 
-@app.route('/print_info', methods=['POST'])
-def print_info():
-    # Get the values from the request
-    name = request.form.get('name')
-    age = request.form.get('age')
-    sex = request.form.get('sex')
-
-    # Pass the values to the other file to be printed
-    # style_transfer.print_info(name, age, sex)
-
-    return jsonify({'message': 'Information received and printed successfully'})
-
 # Define the route for performing style transfer
 @app.route('/perform_style_transfer', methods=['POST'])
 def perform_style_transfer_route():
+    start_time = time.time()  # Start the timer
+
     # Check if files are in the request
     if 'content_img' not in request.files:
         return jsonify({"error": "Content image is required."}), 400
@@ -79,17 +70,15 @@ def perform_style_transfer_route():
     # Call the perform_style_transfer function
     perform_style_transfer(content_img, style_img, output_folder, imgSize, transSteps)
 
+    end_time = time.time()  # End the timer
+    elapsed_time = end_time - start_time  # Calculate elapsed time
+
+    # Print elapsed time to console
+    print(f"Style transfer completed in {elapsed_time:.2f} seconds.")
+
+
     # Return success response
     return jsonify({"message": "Style transfer completed successfully."})
-
-@app.route('/get_data', methods=['GET'])
-def get_data():
-    data = {
-        'name': 'John Doe',
-        'age': 30,
-        'city': 'New York'
-    }
-    return jsonify(data)
 
 @app.route('/recent_images')
 def get_all_images():

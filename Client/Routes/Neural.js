@@ -267,6 +267,7 @@ const Neural = ({ navigation }) => {
               <Picker.Item label="50 times" value="50" />
               <Picker.Item label="100 times" value="100" />
               <Picker.Item label="150 times" value="150" />
+              <Picker.Item label="200 times" value="200" />
               <Picker.Item label="250 times" value="250" />
               <Picker.Item label="300 times" value="300" />
               <Picker.Item label="350 times" value="350" />
