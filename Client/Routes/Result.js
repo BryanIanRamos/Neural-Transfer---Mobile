@@ -81,7 +81,9 @@ export default function Result({ navigation }) {
           </TouchableOpacity>
         ) : (
           <View style={styles.imageEmpty}>
-            <Text>No result image yet</Text>
+            <Text style={{ fontSize: 20, color: "gray" }}>
+              Loading Image...
+            </Text>
           </View>
         )}
         <TouchableOpacity onPress={handleDownload} style={styles.button}>
@@ -101,11 +103,11 @@ const styles = StyleSheet.create({
   },
   image: {
     marginVertical: 10,
-    borderWidth: 2,
+    // borderWidth: 1,
     width: 300,
     height: 300,
     borderRadius: 5,
-    borderColor: "blue",
+    // borderColor: "#5A5DFA",
     borderStyle: "dotted",
   },
   imageEmpty: {
@@ -114,8 +116,10 @@ const styles = StyleSheet.create({
     width: 300,
     height: 300,
     borderRadius: 5,
-    borderColor: "blue",
+    borderColor: "gray",
     borderStyle: "dotted",
+    justifyContent: "center",
+    alignItems: "center",
   },
   button: {
     backgroundColor: "blue",

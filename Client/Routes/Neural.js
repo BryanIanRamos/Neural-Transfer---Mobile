@@ -194,7 +194,7 @@ const Neural = ({ navigation }) => {
                 <Image source={{ uri: selectedContent }} style={styles.image} />
               ) : (
                 <View style={styles.imageBorder}>
-                  <Text style={styles.blueText}>No result image yet</Text>
+                  <Text style={styles.blueText}>Add Content Image</Text>
                 </View>
               )}
             </TouchableOpacity>

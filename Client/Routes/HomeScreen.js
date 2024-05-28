@@ -10,10 +10,12 @@ import {
   TouchableOpacity,
   Modal,
   Alert,
+  Dimensions,
 } from "react-native";
 import * as MediaLibrary from "expo-media-library";
 import axios from "axios";
 import { API_URL, API_KEY } from "@env";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function HomeScreen() {
   const navigation = useNavigation();
@@ -80,12 +82,51 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      <Text>Generate Your Own Art</Text>
-      <Button
-        title="Go to Neural Screen"
+      <Text style={styles.header}>✨Generate Your Own Art ✨</Text>
+      <TouchableOpacity
+        // title="Go to Neural Screen"
+        style={{
+          paddingVertical: 30,
+          backgroundColor: "#5A5DFA",
+          paddingHorizontal: 53,
+          flexDirection: "row",
+          gap: 9,
+          alignItems: "center",
+          borderRadius: 7,
+        }}
         onPress={() => navigation.navigate("Generate")}
+      >
+        <Ionicons name="add-circle" size={50} color="white" />
+        <Text style={{ color: "white", fontSize: 24, fontWeight: "bold" }}>
+          Generate Art
+        </Text>
+      </TouchableOpacity>
+
+      <View
+        style={{
+          justifyContent: "flex-start",
+          alignItems: "flex-start",
+          // paddingHorizontal: 20,
+          // borderWidth: 3,
+          width: "86%",
+          marginTop: 30,
+        }}
+      >
+        <Text style={{ fontSize: 18, color: "gray", fontWeight: 500 }}>
+          Recent Images
+        </Text>
+      </View>
+
+      <View
+        style={{
+          borderBottomWidth: 1,
+          borderBottomColor: "black",
+          width: "86%",
+          marginTop: 10,
+          marginBottom: 20,
+          borderColor: "gray",
+        }}
       />
-      <Text>Recent Images</Text>
 
       <FlatList
         data={images}
@@ -133,7 +174,7 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     borderWidth: 2,
-    borderColor: "#000", // Set the border color
+    borderColor: "gray", // Set the border color
     borderRadius: 3, // Optional, for rounded corners
     margin: 5,
   },
@@ -174,5 +215,12 @@ const styles = StyleSheet.create({
   downloadButtonText: {
     color: "black",
     fontWeight: "bold",
+  },
+  header: {
+    fontWeight: "bold",
+    fontSize: 23,
+    paddingTop: 18,
+    paddingBottom: 25,
+    color: "#5A5DFA",
   },
 });
