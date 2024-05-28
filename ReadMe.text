@@ -1,0 +1,13 @@
+GenARTor: A Mobile Application Project Harnessing Neural Style Transfer
+
+To Run Client Side:
+1. Navigate to Client Folder
+2. Install dependencies by typing [npm install] 
+3. Run the application [npm start]
+
+To Run Server Side
+1. Navigate to Server Folder
+2. Install Flask by typing [pip install Flask] #if only you don't have one.
+3. Run server.py by typing [python server.py]
+
+Happy Coding!!!
