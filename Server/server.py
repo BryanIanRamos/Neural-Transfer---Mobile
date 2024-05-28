@@ -1,10 +1,7 @@
 from flask import Flask, request, jsonify, send_file, send_from_directory, url_for, abort, make_response
 import os
-import io
 from PIL import Image
 from datetime import datetime
-import base64 
-import subprocess
 import time
 
 from style_transfer import perform_style_transfer
@@ -108,7 +105,7 @@ def get_all_images():
         return response
 
     except Exception as e:
-        # Generic error handling, ideally you should log the error
+        # Generic error handling
         return jsonify({'error': str(e)}), 500
 
     
@@ -122,7 +119,7 @@ def get_image_source(filename):
     except FileNotFoundError:
         abort(404, description="File not found")
     except Exception as e:
-        # Generic error handling, ideally you should log the error
+        # Generic error handling
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
